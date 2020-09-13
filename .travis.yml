@@ -1,0 +1,33 @@
+sudo: true
+dist: trusty
+group: travis_latest
+language: node_js
+node_js:
+  - 8.9.0
+
+before_install:
+  - curl -s -u ${ARTIFACTORY_USER}:${ARTIFACTORY_PASS} ${ARTIFACTORY_URL}/artifactory/api/npm/npm-local/auth/bp > .npmrc
+
+install:
+  - npm install --no-optional
+
+# This part would require credentials to Hipchat on the build server. Since this module's tests have not been run since
+#  forever and it is our intention to stop using it, we'll skip these tests and publish the module as-is.
+script:
+  echo "npm test disabled. see .travis.yml for the reasoning."
+
+before_deploy:
+  - npm version -no-git-tag-version ${TRAVIS_TAG}
+
+deploy:
+  - provider: script
+    script: npm publish --registry ${ARTIFACTORY_URL}/artifactory/api/npm/npm-local/
+    skip_cleanup: true
+    on:
+      tags: true
+
+after_script:
+  - rm -f .npmrc
+
+after_failure:
+  - rm -f .npmrc
